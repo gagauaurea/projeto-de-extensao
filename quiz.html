@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EcoVida | Quiz</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <nav class="navbar">
+    <div class="logo">Eco<span>Vida</span></div>
+
+    <ul class="nav-links" id="navLinks">
+      <li><a href="home.html">Home</a></li>
+      <li><a href="reciclagem.html">Reciclagem</a></li>
+      <li><a href="lixos.html">Tipos de lixo</a></li>
+      <li><a href="producao.html">Produção</a></li>
+      <li><a href="areas-verdes.html">Áreas verdes</a></li>
+      <li><a href="quiz.html">Quiz</a></li>
+      <li><a href="contato.html">Contato</a></li>
+    </ul>
+
+    <div>
+      <button id="themeBtn" class="theme-btn">🌙</button>
+      <button id="menuBtn" class="menu-btn">☰</button>
+    </div>
+  </nav>
+</header>
+
+<section class="page-banner">
+  <h1>Quiz Ambiental</h1>
+  <p>Preencha seus dados e responda todas as perguntas.</p>
+</section>
+
+<section>
+  <div class="quiz-box">
+
+    <div id="userFormArea">
+      <h2>Identificação</h2>
+
+      <div class="input-group">
+        <label for="quizNome">Nome completo</label>
+        <input type="text" id="quizNome" placeholder="Digite seu nome completo" required>
+      </div>
+
+      <div class="input-group">
+        <label for="quizEmail">Email</label>
+        <input 
+          type="email" 
+          id="quizEmail" 
+          placeholder="Digite seu email" 
+          required
+          autocomplete="off"
+          pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
+          title="Digite um email válido">
+      </div>
+
+      <button id="startQuiz" class="btn">Começar quiz</button>
+      <p id="startStatus" class="result" style="display:none;"></p>
+    </div>
+
+    <div id="quizArea" style="display:none;">
+      <p id="quizProgress" class="result"></p>
+
+      <h2 id="quizQuestion"></h2>
+
+      <div id="quizAnswers" class="quiz-options"></div>
+
+      <p id="quizFeedback" class="result" style="display:none;"></p>
+
+      <button id="quizNext" class="btn">Próxima pergunta</button>
+
+      <div id="quizFinal" class="final-result"></div>
+    </div>
+
+  </div>
+</section>
+
+<footer>
+  <p>EcoVida © 2026</p>
+</footer>
+
+<script>
+const API_URL_QUIZ = "https://sheetdb.io/api/v1/tm4hxdohdpw7h";
+
+const perguntasQuiz = [
+  {
+    pergunta: "Qual lixo deve ser descartado em pontos de coleta especiais?",
+    respostas: ["Papel", "Vidro", "Lixo eletrônico", "Orgânico"],
+    correta: "Lixo eletrônico"
+  },
+  {
+    pergunta: "Qual material demora mais tempo para se decompor?",
+    respostas: ["Casca de banana", "Papel", "Vidro", "Folhas"],
+    correta: "Vidro"
+  },
+  {
+    pergunta: "Qual atitude ajuda o meio ambiente?",
+    respostas: ["Jogar lixo na rua", "Desperdiçar água", "Separar recicláveis", "Queimar plástico"],
+    correta: "Separar recicláveis"
+  },
+  {
+    pergunta: "O lixo orgânico pode ser usado para:",
+    respostas: ["Compostagem", "Produzir vidro", "Criar metal", "Fazer plástico"],
+    correta: "Compostagem"
+  },
+  {
+    pergunta: "Qual cor normalmente representa reciclagem de papel?",
+    respostas: ["Azul", "Vermelho", "Amarelo", "Verde"],
+    correta: "Azul"
+  },
+  {
+    pergunta: "O plástico pode causar problemas porque:",
+    respostas: ["Demora muito para se decompor", "Vira terra rapidamente", "Some sozinho", "Não polui"],
+    correta: "Demora muito para se decompor"
+  },
+  {
+    pergunta: "Economizar água é importante porque:",
+    respostas: ["Ajuda o meio ambiente", "Aumenta a poluição", "Destrói rios", "Não faz diferença"],
+    correta: "Ajuda o meio ambiente"
+  },
+  {
+    pergunta: "Qual desses materiais é reciclável?",
+    respostas: ["Garrafa PET", "Resto de comida", "Papel higiênico usado", "Bituca de cigarro"],
+    correta: "Garrafa PET"
+  }
+];
+
+let indiceQuiz = 0;
+let acertosQuiz = 0;
+let errosQuiz = 0;
+let respondeuQuiz = false;
+
+let nomeCompletoUsuario = "";
+let emailUsuario = "";
+
+const userFormArea = document.getElementById("userFormArea");
+const quizArea = document.getElementById("quizArea");
+const startQuiz = document.getElementById("startQuiz");
+const startStatus = document.getElementById("startStatus");
+
+const quizNome = document.getElementById("quizNome");
+const quizEmail = document.getElementById("quizEmail");
+
+const quizProgress = document.getElementById("quizProgress");
+const quizQuestion = document.getElementById("quizQuestion");
+const quizAnswers = document.getElementById("quizAnswers");
+const quizFeedback = document.getElementById("quizFeedback");
+const quizNext = document.getElementById("quizNext");
+const quizFinal = document.getElementById("quizFinal");
+
+function enviarQuizAPI(dados){
+  fetch(API_URL_QUIZ, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({data: dados})
+  }).catch(function(erro){
+    console.log("Erro API:", erro);
+  });
+}
+
+startQuiz.addEventListener("click", function(){
+  nomeCompletoUsuario = quizNome.value.trim();
+  emailUsuario = quizEmail.value.trim();
+
+  if(nomeCompletoUsuario === "" || emailUsuario === ""){
+    startStatus.style.display = "block";
+    startStatus.textContent = "⚠️ Preencha nome completo e email antes de começar.";
+    return;
+  }
+
+  if(!quizEmail.checkValidity()){
+    startStatus.style.display = "block";
+    startStatus.textContent = "⚠️ Digite um email válido.";
+    return;
+  }
+
+  startStatus.style.display = "none";
+  userFormArea.style.display = "none";
+  quizArea.style.display = "block";
+
+  carregarQuiz();
+});
+
+function carregarQuiz(){
+  respondeuQuiz = false;
+
+  const atual = perguntasQuiz[indiceQuiz];
+
+  quizProgress.textContent = "Pergunta " + (indiceQuiz + 1) + " de " + perguntasQuiz.length;
+  quizQuestion.textContent = atual.pergunta;
+  quizAnswers.innerHTML = "";
+  quizFeedback.textContent = "";
+  quizFeedback.style.display = "none";
+  quizFinal.innerHTML = "";
+
+  atual.respostas.forEach(function(resposta){
+    const botao = document.createElement("button");
+    botao.textContent = resposta;
+
+    botao.addEventListener("click", function(){
+      responderQuiz(botao, resposta, atual.correta);
+    });
+
+    quizAnswers.appendChild(botao);
+  });
+
+  quizNext.textContent = indiceQuiz === perguntasQuiz.length - 1 ? "Ver resultado" : "Próxima pergunta";
+}
+
+function responderQuiz(botaoClicado, resposta, correta){
+  if(respondeuQuiz) return;
+
+  respondeuQuiz = true;
+
+  const acertou = resposta === correta;
+  const botoes = document.querySelectorAll("#quizAnswers button");
+
+  botoes.forEach(function(botao){
+    botao.disabled = true;
+
+    if(botao.textContent === correta){
+      botao.classList.add("correct");
+    }
+  });
+
+  quizFeedback.style.display = "block";
+
+  if(acertou){
+    acertosQuiz++;
+    botaoClicado.classList.add("correct");
+    quizFeedback.textContent = "✅ Resposta correta!";
+  }else{
+    errosQuiz++;
+    botaoClicado.classList.add("wrong");
+    quizFeedback.textContent = "❌ Resposta errada!";
+  }
+
+  enviarQuizAPI({
+    "Nome Completo": nomeCompletoUsuario,
+    "Email": emailUsuario,
+    "Pergunta": perguntasQuiz[indiceQuiz].pergunta,
+    "Resposta": resposta,
+    "Acertou": acertou ? "Sim" : "Não",
+    "Pontuacao": acertosQuiz + "/" + perguntasQuiz.length,
+    "Data": new Date().toLocaleString("pt-BR")
+  });
+}
+
+function finalizarQuiz(){
+  quizProgress.textContent = "Quiz finalizado";
+  quizQuestion.textContent = "Resultado final";
+  quizAnswers.innerHTML = "";
+  quizFeedback.textContent = "";
+  quizFeedback.style.display = "none";
+  quizNext.style.display = "none";
+
+  quizFinal.innerHTML = `
+    <h2>Resultado do Quiz</h2>
+    <p>👤 Nome: <strong>${nomeCompletoUsuario}</strong></p>
+    <p>📧 Email: <strong>${emailUsuario}</strong></p>
+    <p>✅ Perguntas corretas: <strong>${acertosQuiz} de ${perguntasQuiz.length}</strong></p>
+    <p>❌ Perguntas erradas: <strong>${errosQuiz}</strong></p>
+  `;
+
+  enviarQuizAPI({
+    "Nome Completo": nomeCompletoUsuario,
+    "Email": emailUsuario,
+    "Pergunta": "Resultado final",
+    "Resposta": "",
+    "Acertou": acertosQuiz + " de " + perguntasQuiz.length,
+    "Pontuacao": acertosQuiz + "/" + perguntasQuiz.length,
+    "Data": new Date().toLocaleString("pt-BR")
+  });
+}
+
+quizNext.addEventListener("click", function(){
+  if(!respondeuQuiz){
+    quizFeedback.style.display = "block";
+    quizFeedback.textContent = "⚠️ Escolha uma resposta antes de continuar.";
+    return;
+  }
+
+  if(indiceQuiz === perguntasQuiz.length - 1){
+    finalizarQuiz();
+    return;
+  }
+
+  indiceQuiz++;
+  carregarQuiz();
+});
+</script>
+
+<script src="script.js"></script>
+</body>
+</html>
